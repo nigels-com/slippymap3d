@@ -28,32 +28,66 @@
 #include "tile.h"
 #include "loader.h"
 
-Tile::Tile(int zoom, int x, int y, GLuint texid) : zoom(zoom), x(x), y(y), texid(texid) {
+Tile::Tile(uint16_t zoom, uint64_t x, uint64_t y, GLuint texid) : 
+    zoom(zoom), x(x), y(y), texid(texid)
+{
 }
 
-Tile* Tile::get(int x_diff, int y_diff) {
+Tile * Tile::get(int x_diff, int y_diff)
+{
     return TileFactory::instance()->get_tile(zoom, x+x_diff, y+y_diff);
 }
 
-Tile* Tile::get_east() {
+Tile * Tile::get_east() {
     return get(-1, 0);
 }
 
-Tile* Tile::get_north() {
+Tile * Tile::get_north() {
     return get(0, -1);
 }
 
-Tile* Tile::get_south() {
+Tile * Tile::get_south() {
     return get(0, 1);
 }
 
-Tile* Tile::get_west() {
+Tile * Tile::get_west() {
     return get(1, 0);
 }
 
-std::string Tile::get_filename() {
+Tile * Tile::get_parent()
+{
+    if (zoom>0)
+    {
+        return TileFactory::instance()->get_tile(zoom-1, x>>1, y>>1);
+    }
+    return NULL;
+}
+
+Tile * Tile::get_parent(float minUV[2], float maxUV[2]) const
+{
+    if (zoom>0)
+    {
+        minUV[0] *= 0.5;
+        maxUV[0] *= 0.5;
+        minUV[0] += (x&1) ? 0.5 : 0.0; 
+        maxUV[0] += (x&1) ? 0.5 : 0.0;
+
+        minUV[1] *= 0.5;
+        maxUV[1] *= 0.5;
+        minUV[1] += (y&1) ? 0.5 : 0.0; 
+        maxUV[1] += (y&1) ? 0.5 : 0.0; 
+
+        return TileFactory::instance()->get_tile(zoom-1, x>>1, y>>1);
+    }
+
+    return NULL;
+}
+
+std::string Tile::get_filename(bool tms, const std::string & ext)
+{
+    const uint64_t yy = tms ? y : (uint64_t(1)<<zoom) - 1 - y;
     std::stringstream filename;
-    filename << this->zoom << "/" << this->x << '/' << this->y << ".png";
+    filename << this->zoom << "/" << this->x << '/' << yy << ext;
     return filename.str();
 }
 
@@ -66,6 +100,7 @@ TileFactory::~TileFactory() {
     tiles.clear();
 }
 
+#if 0
 int long2tilex(double lon, int z) {
     return (int)(floor((lon + 180.0) / 360.0 * pow(2.0, z)));
 }
@@ -92,14 +127,17 @@ double latsize(double lat, int z) {
     int tile = lat2tiley(lat, z);
     return (tiley2lat(tile, z) - tiley2lat(tile + 1, z)) / 2;
 }
+#endif
 
+#if 0
 Tile* TileFactory::get_tile(int zoom, double latitude, double longitude) {
     int x = long2tilex(longitude, zoom);
     int y = lat2tiley(latitude, zoom);
     return get_tile(zoom, x, y);
 }
+#endif
 
-Tile* TileFactory::get_tile(int zoom, int x, int y) {
+Tile* TileFactory::get_tile(uint16_t zoom, uint64_t x, uint64_t y) {
     std::string id = tile_id(zoom, x, y);
     std::map<std::string, Tile*>::iterator tile_iter = tiles.find(id);
     if (tile_iter != tiles.end()) {
@@ -111,7 +149,22 @@ Tile* TileFactory::get_tile(int zoom, int x, int y) {
     return tile;
 }
 
-std::string TileFactory::tile_id(int zoom, int x, int y) {
+Tile* TileFactory::get_tile_at(uint16_t zoom, uint64_t x, uint64_t y)
+{
+    x >>= (64-zoom);
+    y >>= (64-zoom);
+    std::string id = tile_id(zoom, int(x), int(y));
+    std::map<std::string, Tile*>::iterator tile_iter = tiles.find(id);
+    if (tile_iter != tiles.end()) {
+        return tile_iter->second;
+    }
+    Tile* tile = new Tile(zoom, x, y, dummy);
+    Loader::instance()->load_image(*tile);
+    tiles[id] = tile;
+    return tile;
+}
+
+std::string TileFactory::tile_id(uint16_t zoom, uint64_t x, uint64_t y) {
     std::stringstream ss;
     ss << zoom << "/" << x << "/" << y;
     return ss.str();

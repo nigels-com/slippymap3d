@@ -25,12 +25,14 @@
 #ifndef _SM3D_GLOBAL_H_
 #define _SM3D_GLOBAL_H_
 
+#include <cstdint>
+
 #define TILE_DIR "./"
 
 /**
  * @brief the size of a tile in pixels
  */
-#define TILE_SIZE (150.0)
+#define TILE_SIZE (256.0)
 
 /**
  * @brief holds the state of the window's width and height
@@ -49,10 +51,16 @@ struct s_window_state {
 /**
  * @brief hold the players current position
  */
-struct s_player_state {
-    double latitude = 50.356718;
-    double longitude = 7.599485;
-    int zoom = 16;
+struct s_player_state 
+{
+    bool grid = true;
+    bool cross = true;
+
+    // 17/121224/54208 @ level 64
+    uint64_t x = uint64_t(121224)<<(64-17);
+    uint64_t y = uint64_t(54208)<<(64-17);
+
+    int zoom = 17;
 };
 
 extern struct s_window_state window_state;

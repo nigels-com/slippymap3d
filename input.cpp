@@ -47,30 +47,28 @@ double angle(int p1x, int p1y, int p2x, int p2y) {
 }
 
 void handle_mouse_motion(SDL_MouseMotionEvent &motion) {
+#if 0
     if (input_state.left_mouse_down) {
         viewport_state.angle_rotate = angle(motion.x, motion.y, (window_state.width / 2), (window_state.height / 2)) - start_angle_rotate;
     }
     if (input_state.right_mouse_down) {
         viewport_state.angle_tilt = std::max((window_state.height / 2) - motion.y, 0) * MAX_TILT / (window_state.height / 2);
     }
-    if (input_state.middle_mouse_down) {
-        long double _cos = std::cos(viewport_state.angle_rotate * M_PI / 180);
-        long double _sin = std::sin(viewport_state.angle_rotate * M_PI / 180);
-        player_state.latitude += (latsize(player_state.latitude, player_state.zoom)/TILE_SIZE) * (motion.yrel * _cos + motion.xrel * _sin) / std::cos(viewport_state.angle_tilt * M_PI / 180);
-        // Cap between a latitude of -66° ad 80° due to the limitations of mercator
-        player_state.latitude = std::min(player_state.latitude, 80.0);
-        player_state.latitude = std::max(player_state.latitude, -66.0);
-        player_state.longitude -= (lonsize(player_state.zoom)/TILE_SIZE) * (motion.xrel * _cos - motion.yrel * _sin);
+#endif
+    if (input_state.left_mouse_down) {
+        const uint64_t delta = (uint64_t(1)<<(64-player_state.zoom-9));
+        player_state.x -= motion.xrel * delta;
+        player_state.y += motion.yrel * delta;
     }
 }
 
 void handle_mouse_button_down(SDL_MouseButtonEvent &button) {
     if (button.button == 1) {
         input_state.left_mouse_down = true;
-        start_angle_rotate = angle(button.x, button.y, (window_state.width / 2), (window_state.height / 2)) - viewport_state.angle_rotate;
+//        start_angle_rotate = angle(button.x, button.y, (window_state.width / 2), (window_state.height / 2)) - viewport_state.angle_rotate;
     } else if (button.button == 3) {
         input_state.right_mouse_down = true;
-        start_angle2 = angle(button.x, button.y, (window_state.width / 2), (window_state.height / 2)) - viewport_state.angle_tilt;
+//        start_angle2 = angle(button.x, button.y, (window_state.width / 2), (window_state.height / 2)) - viewport_state.angle_tilt;
     } else if (button.button == 2) {
         input_state.middle_mouse_down = true;
     }
@@ -88,6 +86,6 @@ void handle_mouse_button_up(SDL_MouseButtonEvent &button) {
 
 void handle_mouse_wheel(SDL_MouseWheelEvent &wheel) {
     player_state.zoom += wheel.y;
-    player_state.zoom = std::max(player_state.zoom, 1);
-    player_state.zoom = std::min(player_state.zoom, 18);
+    player_state.zoom = std::max(player_state.zoom, 0);
+    player_state.zoom = std::min(player_state.zoom, 19);
 }

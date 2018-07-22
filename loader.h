@@ -43,6 +43,9 @@ public:
     void open_image(Tile& tile);
 private:
     static Loader* _instance;
+    bool tms = false;
+    const std::string ext = ".png";
+    const std::string prefix = "https://tile.openstreetmap.org/";
     Loader();
     Loader(const Loader&) {}
     ~Loader();

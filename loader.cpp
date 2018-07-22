@@ -44,9 +44,11 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     return written;
 }
 
+const size_t threads = 10;  // /5
+
 Loader::Loader() {
     work = new boost::asio::io_service::work(ioService);
-    for (int i = 0; i < 5; i++) {
+    for (size_t i = 0; i < threads; i++) {
         pool.create_thread(boost::bind(&boost::asio::io_service::run, &ioService));
     }
 }
@@ -69,8 +71,8 @@ void Loader::download_image(Tile* tile) {
     dirname << TILE_DIR << tile->zoom << "/" << tile->x;
     std::string dir = dirname.str();
     boost::filesystem::create_directories(dir);
-    std::string filename = tile->get_filename();
-    std::string url = "http://localhost/osm_tiles/" + filename;
+    std::string filename = tile->get_filename(tms, ext);
+    std::string url = prefix + filename;    
     std::string file = TILE_DIR + filename;
     FILE* fp = fopen(file.c_str(), "wb");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -87,7 +89,7 @@ void Loader::download_image(Tile* tile) {
 }
 
 void Loader::load_image(Tile& tile) {
-    std::string filename = TILE_DIR + tile.get_filename();
+    std::string filename = TILE_DIR + tile.get_filename(tms, ext);
     if (!boost::filesystem::exists(filename)) {
         ioService.post(boost::bind(&Loader::download_image, this, &tile));
         return;
@@ -102,7 +104,7 @@ void Loader::load_image(Tile& tile) {
 }
 
 void Loader::open_image(Tile &tile) {
-    std::string filename = TILE_DIR + tile.get_filename();
+    std::string filename = TILE_DIR + tile.get_filename(tms, ext);
     SDL_Surface *texture = IMG_Load(filename.c_str());
 
     char tmp[4096];
@@ -128,7 +130,7 @@ void Loader::open_image(Tile &tile) {
                 texture_format = GL_BGR;
             }
         } else {
-            std::cout << "INVALID (" << SDL_GetPixelFormatName(texture->format->format);
+//            std::cout << "INVALID (" << SDL_GetPixelFormatName(texture->format->format);
             SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_BGR24);
             SDL_Surface* tmp = SDL_ConvertSurface(texture, format, 0);
             texture_format = GL_BGR;
@@ -140,7 +142,7 @@ void Loader::open_image(Tile &tile) {
             if (SDL_MUSTLOCK(texture)) {
                 SDL_LockSurface(texture);
             }
-            std::cout << " -> " << SDL_GetPixelFormatName(texture->format->format) << ") ";
+//            std::cout << " -> " << SDL_GetPixelFormatName(texture->format->format) << ") ";
         }
 
         GLuint texid;
@@ -151,6 +153,12 @@ void Loader::open_image(Tile &tile) {
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+//      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         if (SDL_MUSTLOCK(texture)) {
             SDL_UnlockSurface(texture);
