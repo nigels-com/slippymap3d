@@ -96,8 +96,8 @@ bool poll() {
     return true;
 }
 
-//Loader basemap(false, false, "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/", "", "./base/");
-Loader basemap(false, true, "https://tile.openstreetmap.org/", ".png", "./osm/");
+Loader basemap(false, false, "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/", "", "./base/");
+//Loader basemap(false, true, "https://tile.openstreetmap.org/", ".png", "./osm/");
 
 void drawTiles(Loader & loader, Tile & center)
 {
@@ -106,8 +106,8 @@ void drawTiles(Loader & loader, Tile & center)
 
             static const int left = -4;
             static const int right = 4;
-            static const int top = 2;
-            static const int bottom = -2;
+            static const int top = 3;
+            static const int bottom = -3;
 
             // Start 'left' and 'bottom' tiles from the center tile and render up to 'top' and
             // 'right' tiles from the center tile
@@ -222,8 +222,8 @@ void render(double zoom, uint64_t x, uint64_t y)
 
             static const int left = -4;
             static const int right = 4;
-            static const int top = 2;
-            static const int bottom = -2;
+            static const int top = 3;
+            static const int bottom = -3;
 
             // Start 'left' and 'top' tiles from the center tile and render down to 'bottom' and
             // 'right' tiles from the center tile

@@ -127,7 +127,7 @@ void Loader::open_image(Tile &tile)
 
     char tmp[4096];
     getcwd(tmp, 4096);
-    std::cout << "Loading texture " << filename << " from directory " << tmp << ' ';
+//    std::cout << "Loading texture " << filename << " from directory " << tmp << ' ';
 
     if (texture) {
         if (SDL_MUSTLOCK(texture))
@@ -192,9 +192,9 @@ void Loader::open_image(Tile &tile)
 
         tile.texid = texid;
 
-        std::cout << "SUCCESS" << std::endl;
+//        std::cout << "SUCCESS" << std::endl;
     } else {
         tile.texid = TileFactory::instance()->get_dummy();
-        std::cout << "FAILED" << std::endl;
+//        std::cout << "FAILED" << std::endl;
     }
 }
