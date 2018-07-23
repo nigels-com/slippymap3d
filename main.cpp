@@ -184,74 +184,78 @@ void render(double zoom, uint64_t x, uint64_t y)
     glLoadIdentity();
     glOrtho(-(window_state.width / 2), (window_state.width / 2), -(window_state.height / 2), (window_state.height / 2), -1000, 1000);
 
-    glScalef(zf, zf, 1.0);
-
-    // Rotate and and tilt the world geometry
-    glRotated(viewport_state.angle_tilt, 1.0, 0.0, 0.0);
-    glRotated(viewport_state.angle_rotate, 0.0, 0.0, -1.0);
-
-    // Translation as fraction of 512
-    uint64_t fx = (x<<z)>>55;
-    uint64_t fy = (y<<z)>>55;
-//  std::cout << fx << " " << fy << std::endl;
-
-    Tile* center_tile = NULL;
-
-    // Draw tiles
-    glEnable(GL_BLEND); 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glColor4d(1.0, 1.0, 1.0, 1.0);
-
     glPushMatrix();
-        glTranslated(-double(fx), -double(fy), 0);
-        glScalef(512.0, 512.0, 1.0);
 
-        center_tile = TileFactory::instance()->get_tile_at(basemap, z, x, y);
-        drawTiles(basemap, *center_tile);
+        glScalef(zf, zf, 1.0);
 
-    glPopMatrix();
-    glDisable(GL_BLEND); 
+        // Rotate and and tilt the world geometry
+        glRotated(viewport_state.angle_tilt, 1.0, 0.0, 0.0);
+        glRotated(viewport_state.angle_rotate, 0.0, 0.0, -1.0);
 
-    // Draw grid
-    if (player_state.grid)
-    {
-        glColor3d(1.0, 1.0, 1.0);
+        // Translation as fraction of 512
+        uint64_t fx = (x<<z)>>55;
+        uint64_t fy = (y<<z)>>55;
+    //  std::cout << fx << " " << fy << std::endl;
+
+        Tile* center_tile = NULL;
+
+        // Draw tiles
+        glEnable(GL_BLEND); 
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glColor4d(1.0, 1.0, 1.0, 1.0);
+
         glPushMatrix();
             glTranslated(-double(fx), -double(fy), 0);
             glScalef(512.0, 512.0, 1.0);
 
-            static const int left = -4;
-            static const int right = 4;
-            static const int top = 3;
-            static const int bottom = -3;
+            center_tile = TileFactory::instance()->get_tile_at(basemap, z, x, y);
+            drawTiles(basemap, *center_tile);
 
-            // Start 'left' and 'top' tiles from the center tile and render down to 'bottom' and
-            // 'right' tiles from the center tile
-            Tile* current = center_tile->get(basemap, left, bottom);
-            for (int y = bottom; y <= top; y++) {
-                for (int x = left; x <= right; x++) {
-
-                    if (current->valid())
-                    {
-                        // Render the tile itself at the correct position
-                        glPushMatrix();
-                            glTranslated(x, y, 0);
-                            glBegin(GL_LINE_LOOP);
-                                glVertex2f(0.0, 0.0);
-                                glVertex2f(0.0, 1.0);
-                                glVertex2f(1.0, 1.0);
-                                glVertex2f(1.0, 0.0);
-                                glVertex2f(0.0, 0.0);
-                            glEnd();
-                        glPopMatrix();
-                    }
-                    current = current->get_west(basemap);
-                }
-                current = current->get(basemap, -(std::abs(left) + std::abs(right) + 1), 1);
-            }
         glPopMatrix();
-    }
+        glDisable(GL_BLEND); 
 
+        // Draw grid
+        if (player_state.grid)
+        {
+            glColor3d(1.0, 1.0, 1.0);
+            glPushMatrix();
+                glTranslated(-double(fx), -double(fy), 0);
+                glScalef(512.0, 512.0, 1.0);
+
+                static const int left = -4;
+                static const int right = 4;
+                static const int top = 3;
+                static const int bottom = -3;
+
+                // Start 'left' and 'top' tiles from the center tile and render down to 'bottom' and
+                // 'right' tiles from the center tile
+                Tile* current = center_tile->get(basemap, left, bottom);
+                for (int y = bottom; y <= top; y++) {
+                    for (int x = left; x <= right; x++) {
+
+                        if (current->valid())
+                        {
+                            // Render the tile itself at the correct position
+                            glPushMatrix();
+                                glTranslated(x, y, 0);
+                                glBegin(GL_LINE_LOOP);
+                                    glVertex2f(0.0, 0.0);
+                                    glVertex2f(0.0, 1.0);
+                                    glVertex2f(1.0, 1.0);
+                                    glVertex2f(1.0, 0.0);
+                                    glVertex2f(0.0, 0.0);
+                                glEnd();
+                            glPopMatrix();
+                        }
+                        current = current->get_west(basemap);
+                    }
+                    current = current->get(basemap, -(std::abs(left) + std::abs(right) + 1), 1);
+                }
+            glPopMatrix();
+        }
+
+    glPopMatrix();
+    
     // Draw grid
     if (player_state.cross)
     {
