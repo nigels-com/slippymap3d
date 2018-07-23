@@ -29,14 +29,17 @@
 #include <boost/thread.hpp>
 #include <boost/asio/io_service.hpp>
 
+#include <memory>
+
 #include "loader.h"
 #include "global.h"
 
-boost::thread_group pool;
-boost::asio::io_service ioService;
-boost::asio::io_service::work * work;
+static size_t count = 0;
+static boost::asio::io_service       * service = NULL;
+static boost::thread_group           * pool    = NULL;
+static boost::asio::io_service::work * work    = NULL;
 
-Loader* Loader::_instance = nullptr;
+//Loader* Loader::_instance = nullptr;
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     size_t written;
@@ -44,23 +47,36 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     return written;
 }
 
-const size_t threads = 10;  // /5
-
-Loader::Loader() {
-    work = new boost::asio::io_service::work(ioService);
-    for (size_t i = 0; i < threads; i++) {
-        pool.create_thread(boost::bind(&boost::asio::io_service::run, &ioService));
+void Loader::start()
+{
+    ++count;
+    if (count==1)
+    {
+        service = new boost::asio::io_service();
+        work = new boost::asio::io_service::work(*service);
+        pool = new boost::thread_group();
+        const size_t threads = 10;
+        for (size_t i = 0; i < threads; i++) {
+            pool->create_thread(boost::bind(&boost::asio::io_service::run, service));
+        }
     }
 }
 
-Loader::~Loader() {
-    ioService.stop();
-    pool.join_all();
-    delete work;
+void Loader::stop()
+{
+    --count;
+    if (count==0)
+    {
+        service->stop();
+        pool->join_all();
+        delete pool;
+        delete work;
+        delete service;
+    }
 }
 
-void Loader::download_image(Tile* tile) {
-
+void Loader::download_image(Tile* tile)
+{
     CURL* curl = curl_easy_init();
     if (curl == nullptr) {
         std::cerr << "Failed to initialize curl" << std::endl;
@@ -68,12 +84,12 @@ void Loader::download_image(Tile* tile) {
     }
 
     std::stringstream dirname;
-    dirname << TILE_DIR << tile->zoom << "/" << tile->x;
+    dirname << m_dir << tile->zoom << "/" << (m_zxy ? tile->x : (m_tms ? tile->y : (uint64_t(1)<<tile->zoom) - 1 - tile->y));
     std::string dir = dirname.str();
     boost::filesystem::create_directories(dir);
-    std::string filename = tile->get_filename(tms, ext);
-    std::string url = prefix + filename;    
-    std::string file = TILE_DIR + filename;
+    std::string filename = tile->get_filename(m_tms, m_zxy, m_extension);
+    std::string url = m_prefix + filename;    
+    std::string file = m_dir + filename;
     FILE* fp = fopen(file.c_str(), "wb");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
@@ -88,23 +104,25 @@ void Loader::download_image(Tile* tile) {
     }
 }
 
-void Loader::load_image(Tile& tile) {
-    std::string filename = TILE_DIR + tile.get_filename(tms, ext);
+void Loader::load_image(Tile& tile)
+{
+    std::string filename = m_dir + tile.get_filename(m_tms, m_zxy, m_extension);
     if (!boost::filesystem::exists(filename)) {
-        ioService.post(boost::bind(&Loader::download_image, this, &tile));
+        service->post(boost::bind(&Loader::download_image, this, &tile));
         return;
     }
     if (boost::filesystem::file_size(filename) == 0) {
         boost::filesystem::remove(filename);
-        ioService.post(boost::bind(&Loader::download_image, this, &tile));
+        service->post(boost::bind(&Loader::download_image, this, &tile));
         return;
     }
 
     open_image(tile);
 }
 
-void Loader::open_image(Tile &tile) {
-    std::string filename = TILE_DIR + tile.get_filename(tms, ext);
+void Loader::open_image(Tile &tile)
+{
+    std::string filename = m_dir + tile.get_filename(m_tms, m_zxy, m_extension);
     SDL_Surface *texture = IMG_Load(filename.c_str());
 
     char tmp[4096];
@@ -112,28 +130,35 @@ void Loader::open_image(Tile &tile) {
     std::cout << "Loading texture " << filename << " from directory " << tmp << ' ';
 
     if (texture) {
-        if (SDL_MUSTLOCK(texture)) {
+        if (SDL_MUSTLOCK(texture))
+        {
             SDL_LockSurface(texture);
         }
 
-        GLenum texture_format;
+        GLenum format;
+        GLint internalFormat;
         if (texture->format->BytesPerPixel == 4) {
             if (texture->format->Rmask == 0x000000ff) {
-                texture_format = GL_RGBA;
+                format = GL_RGBA;
+                internalFormat = GL_RGBA8;
             } else {
-                texture_format = GL_BGRA;
+                format = GL_BGRA;
+                internalFormat = GL_RGBA8;
             }
         } else if (texture->format->BytesPerPixel == 3) {
             if (texture->format->Rmask == 0x000000ff) {
-                texture_format = GL_RGB;
+                format = GL_RGB;
+                internalFormat = GL_RGB8;
             } else {
-                texture_format = GL_BGR;
+                format = GL_BGR;
+                internalFormat = GL_RGB8;
             }
         } else {
 //            std::cout << "INVALID (" << SDL_GetPixelFormatName(texture->format->format);
-            SDL_PixelFormat* format = SDL_AllocFormat(SDL_PIXELFORMAT_BGR24);
-            SDL_Surface* tmp = SDL_ConvertSurface(texture, format, 0);
-            texture_format = GL_BGR;
+            SDL_PixelFormat* pformat = SDL_AllocFormat(SDL_PIXELFORMAT_BGR24);
+            SDL_Surface* tmp = SDL_ConvertSurface(texture, pformat, 0);
+            format = GL_BGR;
+            internalFormat = GL_RGB8;
             if (SDL_MUSTLOCK(texture)) {
                 SDL_UnlockSurface(texture);
             }
@@ -149,7 +174,7 @@ void Loader::open_image(Tile &tile) {
         glGenTextures(1, &texid);
         glBindTexture(GL_TEXTURE_2D, texid);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, 3, texture->w, texture->h, 0, texture_format, GL_UNSIGNED_BYTE, texture->pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, texture->w, texture->h, 0, format, GL_UNSIGNED_BYTE, texture->pixels);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -172,5 +197,4 @@ void Loader::open_image(Tile &tile) {
         tile.texid = TileFactory::instance()->get_dummy();
         std::cout << "FAILED" << std::endl;
     }
-
 }

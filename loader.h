@@ -31,6 +31,12 @@
 
 class Loader {
 public:
+    Loader(bool tms, bool zxy, const std::string & prefix, const std::string & extension, const std::string & dir)
+    : m_tms(tms), m_zxy(zxy), m_prefix(prefix), m_extension(extension), m_dir(dir) { start(); }
+
+    ~Loader() { stop(); }
+
+#if 0
     static Loader* instance() {
         static CGuard g;
         if (!_instance) {
@@ -38,20 +44,33 @@ public:
         }
         return _instance;
     }
+#endif
 
     void load_image(Tile& tile);
     void open_image(Tile& tile);
 private:
-    static Loader* _instance;
+    static void start();
+    static void stop();
+
+//  static Loader* _instance;
+    bool              m_tms;
+    bool              m_zxy;
+    const std::string m_prefix;
+    const std::string m_extension;
+    const std::string m_dir;
+#if 0
+    bool tms = true;
+    const std::string ext = "";
+    const std::string prefix = ;
+#endif
+#if 0
     bool tms = false;
-    const std::string ext = ".png";
-    const std::string prefix = "https://tile.openstreetmap.org/";
-    Loader();
-    Loader(const Loader&) {}
-    ~Loader();
+#endif
+    Loader(const Loader&) = delete;
 
     void download_image(Tile* tile);
 
+#if 0
     class CGuard {
     public:
         ~CGuard() {
@@ -62,6 +81,7 @@ private:
         }
     };
     friend class CGuard;
+#endif
 };
 
 #endif

@@ -33,37 +33,41 @@ Tile::Tile(uint16_t zoom, uint64_t x, uint64_t y, GLuint texid) :
 {
 }
 
-Tile * Tile::get(int x_diff, int y_diff)
+Tile * Tile::get(Loader & loader, int64_t dx, int64_t dy)
 {
-    return TileFactory::instance()->get_tile(zoom, x+x_diff, y+y_diff);
+    const uint64_t m = uint64_t(1)<<zoom;
+    if (zoom>0)
+        return TileFactory::instance()->get_tile(loader, zoom, (x+dx)%m, (y+dy)%m);
+    else
+        return TileFactory::instance()->get_tile(loader, 0, 0, 0);
 }
 
-Tile * Tile::get_east() {
-    return get(-1, 0);
+Tile * Tile::get_east(Loader & loader) {
+    return get(loader, -1, 0);
 }
 
-Tile * Tile::get_north() {
-    return get(0, -1);
+Tile * Tile::get_north(Loader & loader) {
+    return get(loader, 0, -1);
 }
 
-Tile * Tile::get_south() {
-    return get(0, 1);
+Tile * Tile::get_south(Loader & loader) {
+    return get(loader, 0, 1);
 }
 
-Tile * Tile::get_west() {
-    return get(1, 0);
+Tile * Tile::get_west(Loader & loader) {
+    return get(loader, 1, 0);
 }
 
-Tile * Tile::get_parent()
+Tile * Tile::get_parent(Loader & loader)
 {
     if (zoom>0)
     {
-        return TileFactory::instance()->get_tile(zoom-1, x>>1, y>>1);
+        return TileFactory::instance()->get_tile(loader, zoom-1, x>>1, y>>1);
     }
     return NULL;
 }
 
-Tile * Tile::get_parent(float minUV[2], float maxUV[2]) const
+Tile * Tile::get_parent(Loader & loader, float minUV[2], float maxUV[2]) const
 {
     if (zoom>0)
     {
@@ -77,90 +81,65 @@ Tile * Tile::get_parent(float minUV[2], float maxUV[2]) const
         minUV[1] += (y&1) ? 0.5 : 0.0; 
         maxUV[1] += (y&1) ? 0.5 : 0.0; 
 
-        return TileFactory::instance()->get_tile(zoom-1, x>>1, y>>1);
+        return TileFactory::instance()->get_tile(loader, zoom-1, x>>1, y>>1);
     }
 
     return NULL;
 }
 
-std::string Tile::get_filename(bool tms, const std::string & ext)
+std::string Tile::get_filename(bool tms, bool zxy, const std::string & ext)
 {
-    const uint64_t yy = tms ? y : (uint64_t(1)<<zoom) - 1 - y;
+    uint64_t xx = x;
+    uint64_t yy = tms ? y : (uint64_t(1)<<zoom) - 1 - y;
+    if (!zxy) std::swap(xx, yy);
+
     std::stringstream filename;
-    filename << this->zoom << "/" << this->x << '/' << yy << ext;
+    filename << this->zoom << "/" << xx << '/' << yy << ext;
     return filename.str();
 }
 
 TileFactory* TileFactory::_instance = nullptr;
 
 TileFactory::~TileFactory() {
-    for (std::pair<std::string, Tile*> tile : tiles) {
-        delete tile.second;
+    for (const auto & i : tiles) {
+        delete i.second;
     }
     tiles.clear();
 }
 
-#if 0
-int long2tilex(double lon, int z) {
-    return (int)(floor((lon + 180.0) / 360.0 * pow(2.0, z)));
-}
-
-int lat2tiley(double lat, int z) {
-    return (int)(floor((1.0 - log( tan(lat * M_PI/180.0) + 1.0 / cos(lat * M_PI/180.0)) / M_PI) / 2.0 * pow(2.0, z)));
-}
-
-double tilex2long(int x, int z) {
-    return x / pow(2.0, z) * 360.0 - 180;
-}
-
-double tiley2lat(int y, int z) {
-    double n = M_PI - 2.0 * M_PI * y / pow(2.0, z);
-    return 180.0 / M_PI * atan(0.5 * (exp(n) - exp(-n)));
-}
-
-double lonsize(int z) {
-    return 1 / pow(2.0, z) * 180.0;
-}
-
-double latsize(double lat, int z) {
-    // TODO this needs optimization but seems to work for now
-    int tile = lat2tiley(lat, z);
-    return (tiley2lat(tile, z) - tiley2lat(tile + 1, z)) / 2;
-}
-#endif
-
-#if 0
-Tile* TileFactory::get_tile(int zoom, double latitude, double longitude) {
-    int x = long2tilex(longitude, zoom);
-    int y = lat2tiley(latitude, zoom);
-    return get_tile(zoom, x, y);
-}
-#endif
-
-Tile* TileFactory::get_tile(uint16_t zoom, uint64_t x, uint64_t y) {
+Tile* TileFactory::get_tile(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y) {
     std::string id = tile_id(zoom, x, y);
-    std::map<std::string, Tile*>::iterator tile_iter = tiles.find(id);
-    if (tile_iter != tiles.end()) {
-        return tile_iter->second;
+    auto key = std::make_pair(&loader, id);
+    auto i = tiles.find(key);
+    if (i != tiles.end()) {
+        return i->second;
     }
     Tile* tile = new Tile(zoom, x, y, dummy);
-    Loader::instance()->load_image(*tile);
-    tiles[id] = tile;
+    loader.load_image(*tile);
+    tiles[key] = tile;
     return tile;
 }
 
-Tile* TileFactory::get_tile_at(uint16_t zoom, uint64_t x, uint64_t y)
+Tile* TileFactory::get_tile_at(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y)
 {
-    x >>= (64-zoom);
-    y >>= (64-zoom);
-    std::string id = tile_id(zoom, int(x), int(y));
-    std::map<std::string, Tile*>::iterator tile_iter = tiles.find(id);
-    if (tile_iter != tiles.end()) {
-        return tile_iter->second;
+    if (zoom)
+    {
+        x >>= (64-zoom);
+        y >>= (64-zoom);
+    }
+    else
+    {
+        x = y = 0;
+    }
+    std::string id = tile_id(zoom, x, y);
+    auto key = std::make_pair(&loader, id);
+    auto i = tiles.find(key);
+    if (i != tiles.end()) {
+        return i->second;
     }
     Tile* tile = new Tile(zoom, x, y, dummy);
-    Loader::instance()->load_image(*tile);
-    tiles[id] = tile;
+    loader.load_image(*tile);
+    tiles[key] = tile;
     return tile;
 }
 

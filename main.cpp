@@ -35,6 +35,7 @@
 #include "input.h"
 #include "global.h"
 
+#include <cmath>
 
 /**
  * @brief poll for events
@@ -53,13 +54,13 @@ bool poll() {
                 break;
             case SDL_KEYDOWN:
             {
-                const uint64_t delta = (uint64_t(1)<<(64-player_state.zoom-5));
+                const uint64_t delta = uint64_t(1)<<int(std::floor(64-player_state.zoom-5));
                 switch (event.key.keysym.sym)
                 {
                     case SDLK_c:     player_state.cross = !player_state.cross; break;
                     case SDLK_g:     player_state.grid = !player_state.grid; break;
-                    case SDLK_i:     player_state.zoom = std::min(player_state.zoom+1, 19); break;
-                    case SDLK_o:     player_state.zoom = std::max(player_state.zoom-1,  0); break;
+                    case SDLK_i:     player_state.zoom = std::min<double>(player_state.zoom+1, 19); break;
+                    case SDLK_o:     player_state.zoom = std::max<double>(player_state.zoom-1,  0); break;
                     case SDLK_LEFT:  player_state.x -= delta; break;
                     case SDLK_RIGHT: player_state.x += delta; break;
                     case SDLK_UP:    player_state.y += delta; break;
@@ -95,50 +96,22 @@ bool poll() {
     return true;
 }
 
-void render(int zoom, uint64_t x, uint64_t y)
+//Loader basemap(false, false, "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/", "", "./base/");
+Loader basemap(false, true, "https://tile.openstreetmap.org/", ".png", "./osm/");
+
+void drawTiles(Loader & loader, Tile & center)
 {
-    Tile* center_tile = TileFactory::instance()->get_tile_at(zoom, x, y);
-
-    // Clear with black
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
-    glScalef(1.0,-1.0,1.0);
-    glTranslatef(0.0,-1.0,0.0);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(-(window_state.width / 2), (window_state.width / 2), -(window_state.height / 2), (window_state.height / 2), -1000, 1000);
-
-
-    // Rotate and and tilt the world geometry
-    glRotated(viewport_state.angle_tilt, 1.0, 0.0, 0.0);
-    glRotated(viewport_state.angle_rotate, 0.0, 0.0, -1.0);
-
-    uint64_t m  = zoom ? uint64_t(1)<<(64-zoom) : ~uint64_t(0);
-    uint64_t fx = zoom ? x%m : x;
-    uint64_t fy = zoom ? y%m : y;
-
-//    std::cout << center_tile->x << " " << center_tile->y << " " << m << " " << fx << " " << fy << std::endl;
-
     // Render the slippy map parts
     glEnable(GL_TEXTURE_2D);
 
-        // Draw tiles
-        glPushMatrix();
-            glScalef(512.0, 512.0, 1.0);
-            glTranslated(-double(fx)/m, -double(fy)/m, 0);
-
-            static const int left = -2;
-            static const int right = 2;
+            static const int left = -4;
+            static const int right = 4;
             static const int top = 2;
             static const int bottom = -2;
 
             // Start 'left' and 'bottom' tiles from the center tile and render up to 'top' and
             // 'right' tiles from the center tile
-            Tile * current = center_tile->get(left, bottom);
+            Tile * current = center.get(loader, left, bottom);
             for (int y = bottom; y <= top; y++) 
             {
                 for (int x = left; x <= right; x++) 
@@ -155,19 +128,18 @@ void render(int zoom, uint64_t x, uint64_t y)
                         {
                              while (tile && tile->texid==TileFactory::instance()->get_dummy())
                              {
-                                tile = tile->get_parent(minUV, maxUV);
+                                tile = tile->get_parent(loader, minUV, maxUV);
                                 if (tile && tile->texid == 0)
                                 {
-                                    Loader::instance()->open_image(*tile);
+                                    loader.open_image(*tile);
                                 }
                             }
-//                          std::cout << minUV[0] << " " << minUV[1] << " " << maxUV[0] << " " << maxUV[1] << std::endl;
                         }
                         else 
                         {
                             if (tile && tile->texid == 0)
                             {
-                                Loader::instance()->open_image(*tile);
+                                loader.open_image(*tile);
                             }
                         }
 
@@ -185,24 +157,77 @@ void render(int zoom, uint64_t x, uint64_t y)
                             glPopMatrix();
                         }
                     }
-                    current = current->get_west();
+                    current = current->get_west(loader);
                 }
-                current = current->get(-(std::abs(left) + std::abs(right) + 1), 1);
+                current = current->get(loader, -(std::abs(left) + std::abs(right) + 1), 1);
             }
-        glPopMatrix();
     glDisable(GL_TEXTURE_2D);
+}
+
+void render(double zoom, uint64_t x, uint64_t y)
+{
+//    std::cout << zoom << std::endl;
+
+    const uint16_t z = std::ceil(zoom);
+    const double zf = std::pow(2.0, zoom-z);
+
+    // Clear with black
+    glClearColor(0.0, 0.0, 0.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0,-1.0,1.0);
+    glTranslatef(0.0,-1.0,0.0);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-(window_state.width / 2), (window_state.width / 2), -(window_state.height / 2), (window_state.height / 2), -1000, 1000);
+
+    glScalef(zf, zf, 1.0);
+
+    // Rotate and and tilt the world geometry
+    glRotated(viewport_state.angle_tilt, 1.0, 0.0, 0.0);
+    glRotated(viewport_state.angle_rotate, 0.0, 0.0, -1.0);
+
+    // Translation as fraction of 512
+    uint64_t fx = (x<<z)>>55;
+    uint64_t fy = (y<<z)>>55;
+//  std::cout << fx << " " << fy << std::endl;
+
+    Tile* center_tile = NULL;
+
+    // Draw tiles
+    glEnable(GL_BLEND); 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4d(1.0, 1.0, 1.0, 1.0);
+
+    glPushMatrix();
+        glTranslated(-double(fx), -double(fy), 0);
+        glScalef(512.0, 512.0, 1.0);
+
+        center_tile = TileFactory::instance()->get_tile_at(basemap, z, x, y);
+        drawTiles(basemap, *center_tile);
+
+    glPopMatrix();
+    glDisable(GL_BLEND); 
 
     // Draw grid
     if (player_state.grid)
     {
         glColor3d(1.0, 1.0, 1.0);
         glPushMatrix();
+            glTranslated(-double(fx), -double(fy), 0);
             glScalef(512.0, 512.0, 1.0);
-            glTranslated(-double(fx)/m, -double(fy)/m, 0);
+
+            static const int left = -4;
+            static const int right = 4;
+            static const int top = 2;
+            static const int bottom = -2;
 
             // Start 'left' and 'top' tiles from the center tile and render down to 'bottom' and
             // 'right' tiles from the center tile
-            current = center_tile->get(left, bottom);
+            Tile* current = center_tile->get(basemap, left, bottom);
             for (int y = bottom; y <= top; y++) {
                 for (int x = left; x <= right; x++) {
 
@@ -220,9 +245,9 @@ void render(int zoom, uint64_t x, uint64_t y)
                             glEnd();
                         glPopMatrix();
                     }
-                    current = current->get_west();
+                    current = current->get_west(basemap);
                 }
-                current = current->get(-(std::abs(left) + std::abs(right) + 1), 1);
+                current = current->get(basemap, -(std::abs(left) + std::abs(right) + 1), 1);
             }
         glPopMatrix();
     }
@@ -247,16 +272,6 @@ void render(int zoom, uint64_t x, uint64_t y)
             glVertex2f( 0, -5);
             glVertex2f( 0,  5);
         glEnd();
-#if 0
-        // Draw the players avatar at the center of the screen
-        glColor3d(1.0, 0.5, 0.0);
-        glBegin(GL_TRIANGLES);
-            glVertex3f(-10, -15, 1);
-            glVertex3f( 10, -15, 1);
-            glVertex3f(  0,  10, 1);
-        glEnd();
-        glColor3d(1.0, 1.0, 1.0);
-#endif
     }
 }
 

@@ -32,6 +32,8 @@
 
 #include <GL/gl.h>
 
+class Loader;
+
 /**
  * @brief storage class for a tile
  */
@@ -45,21 +47,22 @@ public:
 
     Tile(uint16_t zoom, uint64_t x, uint64_t y, GLuint texid);
 
-    Tile * get(int x_diff, int y_diff);
-    Tile * get_east();
-    Tile * get_north();
-    Tile * get_south();
-    Tile * get_west();
-    Tile * get_parent();
+    Tile * get(Loader & loader, int64_t dx, int64_t dy);
+    Tile * get_east(Loader & loader);
+    Tile * get_north(Loader & loader);
+    Tile * get_south(Loader & loader);
+    Tile * get_west(Loader & loader);
+    Tile * get_parent(Loader & loader);
 
-    Tile * get_parent(float minUV[2], float maxUV[2]) const;
+    Tile * get_parent(Loader & loader, float minUV[2], float maxUV[2]) const;
 
 //    inline bool valid() const { return x>=0 && x<(1<<zoom) && y>=0 && y<(1<<zoom); }
     inline bool valid() const { return x < (uint64_t(1)<<zoom) && y < (uint64_t(1)<<zoom); }
 
-    std::string get_filename(bool tms = true, const std::string & ext = ".png");
+    std::string get_filename(bool tms = true, bool zxy = true, const std::string & ext = ".png");
 };
 
+#if 0
 extern int long2tilex(double lon, int z);
 
 extern int lat2tiley(double lat, int z);
@@ -74,10 +77,12 @@ extern double tiley2lat(int y, int z);
 extern double lonsize(int z);
 
 extern double latsize(double lat, int z);
+#endif
+
 
 class TileFactory {
 private:
-    std::map<std::string, Tile*> tiles;
+    std::map<std::pair<Loader *, std::string>, Tile *> tiles;
 public:
     static TileFactory* instance() {
         static CGuard g;
@@ -86,9 +91,9 @@ public:
         }
         return _instance;
     }
-//    Tile* get_tile(uint16_t zoom, double latitude, double longitude);
-    Tile *get_tile   (uint16_t zoom, uint64_t x, uint64_t y);
-    Tile *get_tile_at(uint16_t zoom, uint64_t x, uint64_t y);
+
+    Tile *get_tile   (Loader & loader, uint16_t zoom, uint64_t x, uint64_t y);
+    Tile *get_tile_at(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y);
 
     GLuint get_dummy() {
         return dummy;

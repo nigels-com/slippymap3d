@@ -27,8 +27,6 @@
 
 #include <cstdint>
 
-#define TILE_DIR "./"
-
 /**
  * @brief the size of a tile in pixels
  */
@@ -60,7 +58,7 @@ struct s_player_state
     uint64_t x = uint64_t(121224)<<(64-17);
     uint64_t y = uint64_t(54208)<<(64-17);
 
-    int zoom = 17;
+    double zoom = 17;
 };
 
 extern struct s_window_state window_state;
