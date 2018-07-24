@@ -39,19 +39,13 @@ static boost::asio::io_service       * service = NULL;
 static boost::thread_group           * pool    = NULL;
 static boost::asio::io_service::work * work    = NULL;
 
-//Loader* Loader::_instance = nullptr;
-
-size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    size_t written;
-    written = fwrite(ptr, size, nmemb, stream);
-    return written;
-}
-
 void Loader::start()
 {
     ++count;
     if (count==1)
     {
+        std::cout << "Loader::start" << std::endl;
+
         service = new boost::asio::io_service();
         work = new boost::asio::io_service::work(*service);
         pool = new boost::thread_group();
@@ -67,12 +61,21 @@ void Loader::stop()
     --count;
     if (count==0)
     {
+        std::cout << "Loader::stop" << std::endl;
+
         service->stop();
         pool->join_all();
         delete pool;
         delete work;
         delete service;
     }
+}
+
+size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
+{
+    size_t written;
+    written = fwrite(ptr, size, nmemb, stream);
+    return written;
 }
 
 void Loader::download_image(Tile* tile)

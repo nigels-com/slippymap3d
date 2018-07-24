@@ -36,52 +36,23 @@ public:
 
     ~Loader() { stop(); }
 
-#if 0
-    static Loader* instance() {
-        static CGuard g;
-        if (!_instance) {
-            _instance = new Loader();
-        }
-        return _instance;
-    }
-#endif
+    void load_image(Tile & tile);
+    void open_image(Tile & tile);
 
-    void load_image(Tile& tile);
-    void open_image(Tile& tile);
 private:
+    Loader(const Loader&) = delete;
+
     static void start();
     static void stop();
 
-//  static Loader* _instance;
     bool              m_tms;
     bool              m_zxy;
     const std::string m_prefix;
     const std::string m_extension;
     const std::string m_dir;
-#if 0
-    bool tms = true;
-    const std::string ext = "";
-    const std::string prefix = ;
-#endif
-#if 0
-    bool tms = false;
-#endif
-    Loader(const Loader&) = delete;
 
-    void download_image(Tile* tile);
 
-#if 0
-    class CGuard {
-    public:
-        ~CGuard() {
-            if (Loader::_instance != nullptr) {
-                delete Loader::_instance;
-                Loader::_instance = nullptr;
-            }
-        }
-    };
-    friend class CGuard;
-#endif
+    void download_image(Tile * tile);
 };
 
 #endif
