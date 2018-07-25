@@ -1,4 +1,4 @@
-project(slippymad3d)
+project(slippymap3d)
 cmake_minimum_required(VERSION 2.8)
 
 # By default look for modules (e.g. Findsdl2.cmake) in the cmake-folder
