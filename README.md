@@ -1,6 +1,8 @@
 slippymap3d
 ===========
 
+This is a heavily modified fork of egore/slippymap3d
+
 Building
 --------
 
@@ -41,12 +43,20 @@ Starting the program will try to download tiles from "http://localhost/osm_tiles
 that you need to follow the tile usage policy) replace the URL in loader.cpp with e.g.
 "http://a.tile.openstreetmap.org/".
 
-Navigation
-----------
+Keyboard
+--------
 
-* Left mouse button: rotate the map
-* Right mouse button: tile the map
-* Middle mouse button: move the map
+* *g* to toggle tile grid lines
+* *c* to toggle center cross
+* *i* or *o* to zoom
+* *left*, *right*, *up*, *down* arrows to pan
+
+Mouse
+-----
+
+* Left mouse button: panning
+* Right mouse button: zooming
+* Middle mouse wheel: zooming
 
 Screenshots
 -----------

@@ -65,7 +65,8 @@ void handle_mouse_motion(SDL_MouseMotionEvent &motion) {
         player_state.zoom = std::max<double>(player_state.zoom, 0);
         player_state.zoom = std::min<double>(player_state.zoom, 19);
     }
-    if (input_state.left_mouse_down) {
+    if (input_state.left_mouse_down) 
+    {
         const uint64_t delta = uint64_t(1)<<int(std::floor((64-player_state.zoom-9)));
         const uint16_t z = std::ceil(player_state.zoom);
         const double zf = std::pow(2, player_state.zoom-z);
