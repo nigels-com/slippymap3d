@@ -31,13 +31,21 @@
 
 class Loader {
 public:
-    Loader(bool tms, bool zxy, const std::string & prefix, const std::string & extension, const std::string & dir)
-    : m_tms(tms), m_zxy(zxy), m_prefix(prefix), m_extension(extension), m_dir(dir) { start(); }
+    Loader(bool tms, bool zxy, uint16_t maxZoom, const std::string & prefix, const std::string & extension, const std::string & dir)
+    : m_tms(tms), m_zxy(zxy), m_maxZoom(maxZoom), m_prefix(prefix), m_extension(extension), m_dir(dir)
+    { 
+        start(); 
+    }
 
-    ~Loader() { stop(); }
+    ~Loader()
+    { 
+        stop();
+    }
 
     void load_image(Tile & tile);
     void open_image(Tile & tile);
+
+    uint16_t maxZoom() const { return m_maxZoom; }
 
 private:
     Loader(const Loader&) = delete;
@@ -47,6 +55,8 @@ private:
 
     bool              m_tms;
     bool              m_zxy;
+    uint16_t          m_maxZoom;
+
     const std::string m_prefix;
     const std::string m_extension;
     const std::string m_dir;

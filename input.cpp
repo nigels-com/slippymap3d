@@ -49,11 +49,13 @@ double angle(int p1x, int p1y, int p2x, int p2y) {
 
 void handle_mouse_motion(SDL_MouseMotionEvent &motion) {
 #if 0
-    if (input_state.left_mouse_down) {
+    if (input_state.left_mouse_down) 
+	{
         viewport_state.angle_rotate = angle(motion.x, motion.y, (window_state.width / 2), (window_state.height / 2)) - start_angle_rotate;
     }
 #endif
-    if (input_state.right_mouse_down) {
+    if (input_state.right_mouse_down)
+	{
         if (motion.yrel<0)
         {
             player_state.zoom += motion.yrel/-50.0;
@@ -64,16 +66,23 @@ void handle_mouse_motion(SDL_MouseMotionEvent &motion) {
         }
         player_state.zoom = std::max<double>(player_state.zoom, 0);
         player_state.zoom = std::min<double>(player_state.zoom, 19);
+        return;
+    }
+    if (input_state.middle_mouse_down)
+	{
+        viewport_state.angle_rotate += motion.yrel/200.0 * 180.0;
+        return;
     }
     if (input_state.left_mouse_down) 
     {
         const uint64_t delta = uint64_t(1)<<int(std::floor((64-player_state.zoom-9)));
         const uint16_t z = std::ceil(player_state.zoom);
         const double zf = std::pow(2, player_state.zoom-z);
-//        std::cout << zf << std::endl;
-        player_state.x -= double(motion.xrel) * delta / zf;
-        player_state.y += double(motion.yrel) * delta / zf;
-//        std::cout << zf << " " << player_state.x << " " << player_state.y << std::endl;
+        const double c = std::cos(viewport_state.angle_rotate * M_PI / 180.0);
+        const double s = std::sin(viewport_state.angle_rotate * M_PI / 180.0);
+        player_state.x -= (c*motion.xrel + s*motion.yrel) * delta / zf;
+        player_state.y -= (s*motion.xrel - c*motion.yrel) * delta / zf;
+        return;
     }
 }
 

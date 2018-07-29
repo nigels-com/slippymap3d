@@ -28,11 +28,6 @@
 #include <cstdint>
 
 /**
- * @brief the size of a tile in pixels
- */
-#define TILE_SIZE (256.0)
-
-/**
  * @brief holds the state of the window's width and height
  */
 struct s_window_state {
