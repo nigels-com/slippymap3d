@@ -39,6 +39,8 @@ static boost::asio::io_service       * service = NULL;
 static boost::thread_group           * pool    = NULL;
 static boost::asio::io_service::work * work    = NULL;
 
+std::atomic<uint64_t> downloaded;
+
 void Loader::start()
 {
     ++count;
@@ -49,6 +51,7 @@ void Loader::start()
         service = new boost::asio::io_service();
         work = new boost::asio::io_service::work(*service);
         pool = new boost::thread_group();
+        downloaded = 0;
         const size_t threads = 10;
         for (size_t i = 0; i < threads; i++) {
             pool->create_thread(boost::bind(&boost::asio::io_service::run, service));
@@ -104,6 +107,7 @@ void Loader::download_image(Tile* tile)
         std::cerr << "Failed to download: " << url << " " << res << std::endl;
     } else {
         tile->texid = 0;
+        downloaded++;
     }
 }
 
@@ -181,9 +185,6 @@ void Loader::open_image(Tile &tile)
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-//      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

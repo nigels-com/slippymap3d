@@ -30,12 +30,17 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
+#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include "tile.h"
 #include "loader.h"
 #include "input.h"
 #include "global.h"
 
 #include <cmath>
+
+bool redisplay = false;
 
 /**
  * @brief poll for events
@@ -48,12 +53,14 @@ bool poll() {
             case SDL_QUIT:
                 return false;
             case SDL_KEYUP:
+                redisplay = true;
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     return false;
                 }
                 break;
             case SDL_KEYDOWN:
             {
+                redisplay = true;
                 const uint64_t delta = uint64_t(1)<<int(std::floor(64-player_state.zoom-5));
                 switch (event.key.keysym.sym)
                 {
@@ -68,21 +75,26 @@ bool poll() {
                 }
                 break;
             }
-                case SDL_MOUSEMOTION:
+            case SDL_MOUSEMOTION:
+                redisplay = true;
                 handle_mouse_motion(event.motion);
                 break;
             case SDL_MOUSEBUTTONDOWN:
+                redisplay = true;
                 handle_mouse_button_down(event.button);
                 break;
             case SDL_MOUSEBUTTONUP:
+                redisplay = true;
                 handle_mouse_button_up(event.button);
                 break;
             case SDL_MOUSEWHEEL:
+                redisplay = true;
                 handle_mouse_wheel(event.wheel);
                 break;
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED:
+                        redisplay = true;
                         window_state.width = event.window.data1;
                         window_state.height = event.window.data2;
                         glViewport(0, 0, window_state.width, window_state.height);
@@ -326,23 +338,37 @@ int main()
     clock_gettime(CLOCK_REALTIME, &spec);
     long base_time = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
     int frames = 0;
-    while(true) {
-        if (!poll()) {
+    uint64_t d = 0;
+
+    while (true)
+    {
+        if (!poll())
+        {
             break;
         }
-        frames++;
+        // Check for redisplay or new tiles downloaded
+        if (redisplay || d!=downloaded)
+        {
+            d = downloaded;
+            frames++;
 
-        clock_gettime(CLOCK_REALTIME, &spec);
-        long time_in_mill = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
-        if ((time_in_mill - base_time) > 1000.0) {
-            std::cout << frames * 1000.0 / (time_in_mill - base_time) << " fps" << std::endl;
-            base_time = time_in_mill;
-            frames=0;
+            clock_gettime(CLOCK_REALTIME, &spec);
+            long time_in_mill = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
+            if ((time_in_mill - base_time) > 1000.0) {
+                std::cout << frames * 1000.0 / (time_in_mill - base_time) << " fps" << std::endl;
+                base_time = time_in_mill;
+                frames=0;
+            }
+
+            render(player_state.zoom, player_state.x, player_state.y);
+            SDL_GL_SwapWindow(window);
+            redisplay = false;
         }
-
-        render(player_state.zoom, player_state.x, player_state.y);
-
-        SDL_GL_SwapWindow(window);
+        else
+        {
+            // 0.3% CPU usage on MacBook Pro
+            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        }
     }
 
     SDL_GL_DeleteContext(context);

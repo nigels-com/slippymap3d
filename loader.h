@@ -25,9 +25,12 @@
 #ifndef _SM3D_LOADER_H_
 #define _SM3D_LOADER_H_
 
+#include <atomic>
 #include <iostream>
 
 #include "tile.h"
+
+extern std::atomic<uint64_t> downloaded;
 
 class Loader {
 public:
