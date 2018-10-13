@@ -21,6 +21,8 @@ find_package(ZLIB REQUIRED)
 
 #message(STATUS "Boost libraries: " ${Boost_LIBRARIES})
 
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
+
 # We need C++11
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g -std=gnu++0x")

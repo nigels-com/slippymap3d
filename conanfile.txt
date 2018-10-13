@@ -24,7 +24,6 @@ libpng:shared=False
 zlib:shared=False
 libjpeg:shared=False
 libcurl:shared=True
-libcurl:shared=True
 boost_filesystem:shared=False
 boost_system:shared=False
 boost_thread:shared=False

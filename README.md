@@ -22,7 +22,21 @@ Building the program:
     $ cd slippymap3d
     $ mkdir build
     $ cd build
-    $ git clean -xdf . && conan install .. --build=missing && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4
+    $ git clean -xdf . && conan install .. --build=missing && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j4
+
+CMake Debug or Release mode:
+
+	$ cmake -DCMAKE_BUILD_TYPE=Debug ..
+	$ cmake -DCMAKE_BUILD_TYPE=Release ..
+
+Conan Debug or Release mode:
+
+    $ conan install .. -s build_type=Debug
+    $ conan install .. -s build_type=Release
+
+Cross-building 32-bit binaries:
+
+    $ git clean -xdf . && conan install .. -s arch=x86 --build=missing && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-m32 .. && make -j4
 
 Using official tiles
 --------------------
