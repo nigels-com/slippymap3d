@@ -2,6 +2,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2014 Christoph Brill
+ * Copyright (c) 2018 Nigel Stewart (nigels@nigels.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +30,8 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+
+#include <curl/curl.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -150,13 +153,13 @@ void drawTiles(Loader & loader, GLsizei width, GLsizei height, double zf, uint16
     // Render the slippy map parts
 
     uint64_t j = 0;
-    for (uint64_t y = tile[1]; j<=size[1]; ++y, ++j) 
+    for (uint64_t y = tile[1]; j<=size[1]; ++y, ++j)
     {
         uint64_t i = 0;
-        for (uint64_t x = tile[0]; i<=size[0]; ++x, ++i) 
+        for (uint64_t x = tile[0]; i<=size[0]; ++x, ++i)
         {
 //            std::cout << z << "/" << (x>>16) << "/" << (y>>16) << std::endl;
-            Tile * current = TileFactory::instance()->get_tile(loader, z, x%levelSize, y%levelSize);               
+            Tile * current = TileFactory::instance()->get_tile(loader, z, x%levelSize, y%levelSize);
             if (current->valid())
             {
                 float minUV[2] = { 0, 0 };
@@ -175,7 +178,7 @@ void drawTiles(Loader & loader, GLsizei width, GLsizei height, double zf, uint16
                         }
                     }
                 }
-                else 
+                else
                 {
                     if (current && current->texid == 0)
                     {
@@ -234,7 +237,7 @@ void render(double zoom, uint64_t x, uint64_t y)
         glRotated(viewport_state.angle_rotate, 0.0, 0.0, -1.0);
 
         // Draw tiles
-        glEnable(GL_BLEND); 
+        glEnable(GL_BLEND);
         glEnable(GL_TEXTURE_2D);
 
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -243,7 +246,7 @@ void render(double zoom, uint64_t x, uint64_t y)
             drawTiles(basemap, window_state.width, window_state.height, zf, z, x, y);
 
         glDisable(GL_TEXTURE_2D);
-        glDisable(GL_BLEND); 
+        glDisable(GL_BLEND);
 
         // Draw grid
         if (player_state.grid)
@@ -292,7 +295,7 @@ void render(double zoom, uint64_t x, uint64_t y)
         }
 
     glPopMatrix();
-    
+
     // Draw grid
     if (player_state.cross)
     {
@@ -318,6 +321,13 @@ void render(double zoom, uint64_t x, uint64_t y)
 
 int main()
 {
+    // Initialize CURL
+    if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0)
+    {
+        std::cerr << "Could not initialize libcurl. " << std::endl;
+        return 1;
+    }
+
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "Could not initialize SDL video: " << SDL_GetError() << std::endl;

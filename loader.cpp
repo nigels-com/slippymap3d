@@ -2,6 +2,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2014 Christoph Brill
+ * Copyright (c) 2018 Nigel Stewart (nigels@nigels.com)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -94,17 +95,26 @@ void Loader::download_image(Tile* tile)
     std::string dir = dirname.str();
     boost::filesystem::create_directories(dir);
     std::string filename = tile->get_filename(m_tms, m_zxy, m_extension);
-    std::string url = m_prefix + filename;    
+    std::string url = m_prefix + filename;
     std::string file = m_dir + filename;
     FILE* fp = fopen(file.c_str(), "wb");
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+
+    // Disable certificate verification in order to support CURL/OpenSSL
+    // without system-specific capath configuration via Conan
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+
+    // Buffer for error message
+    char errorMessage[CURL_ERROR_SIZE];
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorMessage);
+
     CURLcode res = curl_easy_perform(curl);
     fclose(fp);
     curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
-        std::cerr << "Failed to download: " << url << " " << res << std::endl;
+        std::cerr << "Failed to download: " << url << " " << errorMessage << std::endl;
     } else {
         tile->texid = 0;
         downloaded++;
@@ -132,11 +142,8 @@ void Loader::open_image(Tile &tile)
     std::string filename = m_dir + tile.get_filename(m_tms, m_zxy, m_extension);
     SDL_Surface *texture = IMG_Load(filename.c_str());
 
-    char tmp[4096];
-    getcwd(tmp, 4096);
-//    std::cout << "Loading texture " << filename << " from directory " << tmp << ' ';
-
-    if (texture) {
+    if (texture)
+    {
         if (SDL_MUSTLOCK(texture))
         {
             SDL_LockSurface(texture);
