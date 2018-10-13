@@ -102,6 +102,8 @@ void Loader::download_image(Tile* tile)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
 
+    curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+
     // Disable certificate verification in order to support CURL/OpenSSL
     // without system-specific capath configuration via Conan
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);

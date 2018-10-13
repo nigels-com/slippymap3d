@@ -43,7 +43,11 @@
 
 #include <cmath>
 
-bool redisplay = true;
+bool        redisplay = true;
+bool        fullscreen = false;
+SDL_Window *window = NULL;
+int64_t     dx = 0;
+int64_t     dy = 0;
 
 /**
  * @brief poll for events
@@ -75,6 +79,13 @@ bool poll() {
                     case SDLK_RIGHT: player_state.x += delta; break;
                     case SDLK_UP:    player_state.y += delta; break;
                     case SDLK_DOWN:  player_state.y -= delta; break;
+                    case SDLK_TAB:   SDL_SetWindowFullscreen(window, (fullscreen = !fullscreen) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0); break;
+
+                    case SDLK_a:     dx -= delta/8;  break;
+                    case SDLK_d:     dx += delta/8;  break;
+                    case SDLK_w:     dy += delta/8;  break;
+                    case SDLK_s:     dy -= delta/8;  break;
+                    case SDLK_SPACE: dx = 0; dy = 0; break;
                 }
                 break;
             }
@@ -335,7 +346,7 @@ int main()
     }
 
     // Create an OpenGL window
-    SDL_Window* window = SDL_CreateWindow("slippymap3d", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("slippymap3d", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window) {
         std::cerr << "Could not create SDL window: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -357,10 +368,14 @@ int main()
             break;
         }
         // Check for redisplay or new tiles downloaded
-        if (redisplay || d!=downloaded)
+        if (redisplay || d!=downloaded || dx || dy)
         {
             d = downloaded;
             frames++;
+
+            // Update position, if moving
+            player_state.x += dx;
+            player_state.y += dy;
 
             clock_gettime(CLOCK_REALTIME, &spec);
             long time_in_mill = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
