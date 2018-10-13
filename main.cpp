@@ -40,7 +40,7 @@
 
 #include <cmath>
 
-bool redisplay = false;
+bool redisplay = true;
 
 /**
  * @brief poll for events

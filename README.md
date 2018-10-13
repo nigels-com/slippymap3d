@@ -6,34 +6,23 @@ This is a heavily modified fork of egore/slippymap3d
 Building
 --------
 
-slippymap3d uses CMake to compile the code. To build the program you need at
-least
+slippymap3d uses Conan and CMake to compile the code.
 
-* C++11 capable compiler
-* SDL 2.x with SDL_image
-* CURL
-* OpenGL
-* boost filesystem, system and thread
+System setup:
 
-To compile the program you can either use the following commands
+    $ sudo apt install build-essentials git python-pip
+    $ pip install conan
 
-```
-cd slippymap3d
-mkdir build
-cd build
-cmake ..
-make
-```
+Code repository:
 
-Alternatively the ninja build system is supported as well
+    $ git clone https://github.com/nigels-com/slippymap3d.git
 
-```
-cd slippymap3d
-mkdir build
-cd build
-cmake -GNinja ..
-ninja
-```
+Building the program:
+
+    $ cd slippymap3d
+    $ mkdir build
+    $ cd build
+    $ git clean -xdf . && conan install .. --build=missing && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j4
 
 Using official tiles
 --------------------
