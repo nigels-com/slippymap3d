@@ -22,8 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef _SM3D_INPUT_H_
-#define _SM3D_INPUT_H_
+#pragma once
 
 #include <SDL2/SDL.h>
 
@@ -42,5 +41,3 @@ extern void handle_mouse_motion(SDL_MouseMotionEvent &motion);
 extern void handle_mouse_button_down(SDL_MouseButtonEvent &button);
 extern void handle_mouse_button_up(SDL_MouseButtonEvent &button);
 extern void handle_mouse_wheel(SDL_MouseWheelEvent &wheel);
-
-#endif

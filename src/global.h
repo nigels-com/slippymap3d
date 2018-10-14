@@ -22,8 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef _SM3D_GLOBAL_H_
-#define _SM3D_GLOBAL_H_
+#pragma once
 
 #include <cstdint>
 
@@ -58,5 +57,3 @@ struct s_player_state
 
 extern struct s_window_state window_state;
 extern struct s_player_state player_state;
-
-#endif

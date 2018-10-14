@@ -29,7 +29,8 @@
 #include <time.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+
+#include <GL/glew.h>
 
 #include <curl/curl.h>
 
@@ -37,6 +38,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "tile.h"
+#include "tilefactory.h"
 #include "loader.h"
 #include "input.h"
 #include "global.h"

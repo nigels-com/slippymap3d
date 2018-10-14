@@ -26,6 +26,7 @@
 #include <cmath>
 
 #include "tile.h"
+#include "tilefactory.h"
 #include "loader.h"
 
 Tile::Tile(uint16_t zoom, uint64_t x, uint64_t y, GLuint texid) : 
@@ -96,55 +97,4 @@ std::string Tile::get_filename(bool tms, bool zxy, const std::string & ext)
     std::stringstream filename;
     filename << this->zoom << "/" << xx << '/' << yy << ext;
     return filename.str();
-}
-
-TileFactory* TileFactory::_instance = nullptr;
-
-TileFactory::~TileFactory() {
-    for (const auto & i : tiles) {
-        delete i.second;
-    }
-    tiles.clear();
-}
-
-Tile* TileFactory::get_tile(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y) {
-    std::string id = tile_id(zoom, x, y);
-    auto key = std::make_pair(&loader, id);
-    auto i = tiles.find(key);
-    if (i != tiles.end()) {
-        return i->second;
-    }
-    Tile* tile = new Tile(zoom, x, y, dummy);
-    loader.load_image(*tile);
-    tiles[key] = tile;
-    return tile;
-}
-
-Tile* TileFactory::get_tile_at(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y)
-{
-    if (zoom)
-    {
-        x >>= (64-zoom);
-        y >>= (64-zoom);
-    }
-    else
-    {
-        x = y = 0;
-    }
-    std::string id = tile_id(zoom, x, y);
-    auto key = std::make_pair(&loader, id);
-    auto i = tiles.find(key);
-    if (i != tiles.end()) {
-        return i->second;
-    }
-    Tile* tile = new Tile(zoom, x, y, dummy);
-    loader.load_image(*tile);
-    tiles[key] = tile;
-    return tile;
-}
-
-std::string TileFactory::tile_id(uint16_t zoom, uint64_t x, uint64_t y) {
-    std::stringstream ss;
-    ss << zoom << "/" << x << "/" << y;
-    return ss.str();
 }

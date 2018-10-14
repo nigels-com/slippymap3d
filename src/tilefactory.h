@@ -24,37 +24,58 @@
 
 #pragma once
 
+#include "tile.h"
+
 #include <string>
+#include <map>
+#include <cstdint>
 
 #include <GL/glew.h>
 
 class Loader;
 
-/**
- * @brief storage class for a tile
- */
-class Tile {
+class TileFactory
+{
+private:
+    std::map<std::pair<Loader *, std::string>, Tile *> tiles;
 public:
-    uint16_t zoom;
-    uint64_t x;
-    uint64_t y;
+    static TileFactory* instance() {
+        static CGuard g;
+        if (!_instance) {
+            _instance = new TileFactory();
+        }
+        return _instance;
+    }
 
-    GLuint   texid;
+    Tile *get_tile   (Loader & loader, uint16_t zoom, uint64_t x, uint64_t y);
+    Tile *get_tile_at(Loader & loader, uint16_t zoom, uint64_t x, uint64_t y);
 
-    Tile(uint16_t zoom, uint64_t x, uint64_t y, GLuint texid);
+    GLuint get_dummy() {
+        return dummy;
+    }
 
-    Tile * get(Loader & loader, int64_t dx, int64_t dy);
-    Tile * get_east(Loader & loader);
-    Tile * get_north(Loader & loader);
-    Tile * get_south(Loader & loader);
-    Tile * get_west(Loader & loader);
-    Tile * get_parent(Loader & loader);
+private:
+    static TileFactory* _instance;
+    GLuint dummy;
+    TileFactory() {
+        glGenTextures(1, &this->dummy);
+        glBindTexture(GL_TEXTURE_2D, this->dummy);
 
-    Tile * get_parent(Loader & loader, float minUV[2], float maxUV[2]) const;
+        unsigned char empty[3] = {0, 0, 0};
+        glTexImage2D(GL_TEXTURE_2D, 0, 3, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, empty);
+    }
+    TileFactory(const TileFactory&) {}
+    ~TileFactory();
+    std::string tile_id(uint16_t zoom, uint64_t x, uint64_t y);
 
-//    inline bool valid() const { return x>=0 && x<(1<<zoom) && y>=0 && y<(1<<zoom); }
-    inline bool valid() const { return x < (uint64_t(1)<<zoom) && y < (uint64_t(1)<<zoom); }
-
-    std::string get_filename(bool tms = true, bool zxy = true, const std::string & ext = ".png");
+    class CGuard {
+    public:
+        ~CGuard() {
+            if (TileFactory::_instance != nullptr) {
+                delete TileFactory::_instance;
+                TileFactory::_instance = nullptr;
+            }
+        }
+    };
+    friend class CGuard;
 };
-

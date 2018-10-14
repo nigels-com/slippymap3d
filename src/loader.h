@@ -22,8 +22,7 @@
  * THE SOFTWARE.
  */
 
-#ifndef _SM3D_LOADER_H_
-#define _SM3D_LOADER_H_
+#pragma once
 
 #include <atomic>
 #include <iostream>
@@ -32,7 +31,8 @@
 
 extern std::atomic<uint64_t> downloaded;
 
-class Loader {
+class Loader
+{
 public:
     Loader(bool tms, bool zxy, uint16_t maxZoom, const std::string & prefix, const std::string & extension, const std::string & dir)
     : m_tms(tms), m_zxy(zxy), m_maxZoom(maxZoom), m_prefix(prefix), m_extension(extension), m_dir(dir)
@@ -67,5 +67,3 @@ private:
 
     void download_image(Tile * tile);
 };
-
-#endif

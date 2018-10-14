@@ -33,6 +33,7 @@
 #include <memory>
 
 #include "loader.h"
+#include "tilefactory.h"
 #include "global.h"
 
 static size_t count = 0;
