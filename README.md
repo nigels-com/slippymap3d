@@ -34,9 +34,14 @@ Conan Debug or Release mode:
     $ conan install .. -s build_type=Debug
     $ conan install .. -s build_type=Release
 
-Cross-building 32-bit binaries:
+Cross-building 32-bit binaries on Ubuntu:
 
     $ git clean -xdf . && conan install .. -s arch=x86 --build=missing && cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=-m32 .. && make -j4
+
+Mac build:
+
+    git clean -xdf . && conan install .. --build=missing -s compiler.version=10.0 && cmake .. && make -j4
+
 
 Using official tiles
 --------------------
