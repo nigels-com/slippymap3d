@@ -46,3 +46,8 @@ target_link_libraries(${PROJECT_NAME}
     ${JPEG_LIBRARY} ${PNG_LIBRARY}
     ${GLEW_LIBRARY}
     ${CURL_LIBRARY} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARY} dl)
+
+if(UNIX AND NOT APPLE)
+target_link_libraries(${PROJECT_NAME} pthread)
+endif()
+
