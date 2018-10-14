@@ -45,11 +45,12 @@
 
 #include <cmath>
 
-bool        redisplay = true;
-bool        fullscreen = false;
-SDL_Window *window = NULL;
-int64_t     dx = 0;
-int64_t     dy = 0;
+bool            redisplay = true;
+bool            fullscreen = false;
+SDL_Window     *window = NULL;
+int64_t         dx = 0;
+int64_t         dy = 0;
+struct timespec timeKeyboardMouse;
 
 /**
  * @brief poll for events
@@ -116,6 +117,19 @@ bool poll() {
                         glViewport(0, 0, window_state.width, window_state.height);
                         break;
                 }
+                break;
+            default:
+                break;
+        }
+
+        switch (event.type) {
+            case SDL_KEYUP:
+            case SDL_KEYDOWN:
+            case SDL_MOUSEMOTION:
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEWHEEL:
+                clock_gettime(CLOCK_REALTIME, &timeKeyboardMouse);
                 break;
             default:
                 break;
@@ -357,6 +371,8 @@ int main()
     SDL_GetWindowSize(window, &window_state.width, &window_state.height);
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
+    clock_gettime(CLOCK_REALTIME, &timeKeyboardMouse);
+
     struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
     long base_time = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
@@ -369,6 +385,14 @@ int main()
         {
             break;
         }
+
+        clock_gettime(CLOCK_REALTIME, &spec);
+        long now = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
+        long idle = timeKeyboardMouse.tv_sec * 1000 + round(timeKeyboardMouse.tv_nsec / 1.0e6);
+
+        // Hide mouse after 5s user idle
+        SDL_ShowCursor((now - idle) < 5000.0);
+
         // Check for redisplay or new tiles downloaded
         if (redisplay || d!=downloaded || dx || dy)
         {
@@ -379,11 +403,9 @@ int main()
             player_state.x += dx;
             player_state.y += dy;
 
-            clock_gettime(CLOCK_REALTIME, &spec);
-            long time_in_mill = spec.tv_sec * 1000 + round(spec.tv_nsec / 1.0e6);
-            if ((time_in_mill - base_time) > 1000.0) {
-                std::cout << frames * 1000.0 / (time_in_mill - base_time) << " fps" << std::endl;
-                base_time = time_in_mill;
+            if ((now - base_time) > 1000) {
+                std::cout << frames * 1000.0 / (now - base_time) << " fps" << std::endl;
+                base_time = now;
                 frames=0;
             }
 
