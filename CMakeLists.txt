@@ -31,9 +31,10 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${CURL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories(src)
 
 # All source files from the current directory will be used
-aux_source_directory(. SRC_LIST)
+aux_source_directory(src SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 target_link_libraries(${PROJECT_NAME} 
     ${Boost_LIBRARIES} boost_filesystem boost_system boost_thread
