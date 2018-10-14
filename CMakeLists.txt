@@ -41,7 +41,7 @@ include_directories(src)
 aux_source_directory(src SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 target_link_libraries(${PROJECT_NAME}
-    ${Boost_LIBRARIES} boost_filesystem boost_system boost_thread
+    ${Boost_LIBRARIES}
     ${SDL2_IMAGE_LIBRARY} SDL2main SDL2
     ${JPEG_LIBRARY} ${PNG_LIBRARY}
     ${GLEW_LIBRARY}
