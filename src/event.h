@@ -22,15 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include "global.h"
+#pragma once
 
-struct s_window_state window_state;
-struct s_player_state player_state;
-
-bool            redisplay = true;
-bool            fullscreen = false;
-SDL_Window     *window = NULL;
-
-struct timespec timeKeyboardMouse;
-
-Imath::Vec2<int64_t> velocity = { 0, 0 };
+extern bool poll();

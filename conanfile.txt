@@ -9,6 +9,8 @@ boost_filesystem/1.65.1@bincrafters/stable
 boost_system/1.65.1@bincrafters/stable
 boost_thread/1.65.1@bincrafters/stable
 boost_asio/1.65.1@bincrafters/stable
+libcurl/7.61.1@bincrafters/stable
+ilmbase/2.3.0@jgsogo/testing
 
 [generators]
 cmake
@@ -26,3 +28,4 @@ libjpeg:shared=False
 boost_filesystem:shared=False
 boost_system:shared=False
 boost_thread:shared=False
+ilmbase:shared=False

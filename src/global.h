@@ -26,6 +26,10 @@
 
 #include <cstdint>
 
+#include <SDL2/SDL.h>
+
+#include <OpenEXR/ImathVec.h>
+
 /**
  * @brief holds the state of the window's width and height
  */
@@ -57,3 +61,11 @@ struct s_player_state
 
 extern struct s_window_state window_state;
 extern struct s_player_state player_state;
+
+extern bool            redisplay;
+extern bool            fullscreen;
+extern SDL_Window     *window;
+
+extern struct timespec timeKeyboardMouse;
+
+extern Imath::Vec2<int64_t> velocity;

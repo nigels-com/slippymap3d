@@ -37,6 +37,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "event.h"
 #include "tile.h"
 #include "tilefactory.h"
 #include "loader.h"
@@ -44,99 +45,6 @@
 #include "global.h"
 
 #include <cmath>
-
-bool            redisplay = true;
-bool            fullscreen = false;
-SDL_Window     *window = NULL;
-int64_t         dx = 0;
-int64_t         dy = 0;
-struct timespec timeKeyboardMouse;
-
-/**
- * @brief poll for events
- * @return false, if the program should end, otherwise true
- */
-bool poll() {
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
-                return false;
-            case SDL_KEYUP:
-                redisplay = true;
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    return false;
-                }
-                break;
-            case SDL_KEYDOWN:
-            {
-                redisplay = true;
-                const uint64_t delta = uint64_t(1)<<int(std::floor(64-player_state.zoom-5));
-                switch (event.key.keysym.sym)
-                {
-                    case SDLK_c:     player_state.cross = !player_state.cross; break;
-                    case SDLK_g:     player_state.grid = !player_state.grid; break;
-                    case SDLK_i:     player_state.zoom = std::min<double>(player_state.zoom+1, 19); break;
-                    case SDLK_o:     player_state.zoom = std::max<double>(player_state.zoom-1,  0); break;
-                    case SDLK_LEFT:  player_state.x -= delta; break;
-                    case SDLK_RIGHT: player_state.x += delta; break;
-                    case SDLK_UP:    player_state.y += delta; break;
-                    case SDLK_DOWN:  player_state.y -= delta; break;
-                    case SDLK_TAB:   SDL_SetWindowFullscreen(window, (fullscreen = !fullscreen) ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0); break;
-
-                    case SDLK_a:     dx -= delta/8;  break;
-                    case SDLK_d:     dx += delta/8;  break;
-                    case SDLK_w:     dy += delta/8;  break;
-                    case SDLK_s:     dy -= delta/8;  break;
-                    case SDLK_SPACE: dx = 0; dy = 0; break;
-                }
-                break;
-            }
-            case SDL_MOUSEMOTION:
-                redisplay = true;
-                handle_mouse_motion(event.motion);
-                break;
-            case SDL_MOUSEBUTTONDOWN:
-                redisplay = true;
-                handle_mouse_button_down(event.button);
-                break;
-            case SDL_MOUSEBUTTONUP:
-                redisplay = true;
-                handle_mouse_button_up(event.button);
-                break;
-            case SDL_MOUSEWHEEL:
-                redisplay = true;
-                handle_mouse_wheel(event.wheel);
-                break;
-            case SDL_WINDOWEVENT:
-                switch (event.window.event) {
-                    case SDL_WINDOWEVENT_RESIZED:
-                        redisplay = true;
-                        window_state.width = event.window.data1;
-                        window_state.height = event.window.data2;
-                        glViewport(0, 0, window_state.width, window_state.height);
-                        break;
-                }
-                break;
-            default:
-                break;
-        }
-
-        switch (event.type) {
-            case SDL_KEYUP:
-            case SDL_KEYDOWN:
-            case SDL_MOUSEMOTION:
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
-            case SDL_MOUSEWHEEL:
-                clock_gettime(CLOCK_REALTIME, &timeKeyboardMouse);
-                break;
-            default:
-                break;
-        }
-    }
-    return true;
-}
 
 // Compute the bottom left tile, and tile grid size
 void visibleBounds(uint64_t width, uint64_t height, uint64_t bits, uint64_t z, uint64_t x, uint64_t y, uint64_t tile[2], uint64_t size[2])
@@ -394,14 +302,14 @@ int main()
         SDL_ShowCursor((now - idle) < 5000.0);
 
         // Check for redisplay or new tiles downloaded
-        if (redisplay || d!=downloaded || dx || dy)
+        if (redisplay || d!=downloaded || velocity.x || velocity.y)
         {
             d = downloaded;
             frames++;
 
             // Update position, if moving
-            player_state.x += dx;
-            player_state.y += dy;
+            player_state.x += velocity.x;
+            player_state.y += velocity.y;
 
             if ((now - base_time) > 1000) {
                 std::cout << frames * 1000.0 / (now - base_time) << " fps" << std::endl;
