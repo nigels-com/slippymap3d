@@ -12,13 +12,16 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 find_package(SDL2 REQUIRED)
 find_package(SDL2_image REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(CURL REQUIRED)
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS REQUIRED filesystem system asio thread)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 
 #message(STATUS "Boost libraries: " ${Boost_LIBRARIES})
+
+set (CMAKE_CXX_STANDARD 11)
 
 # We need C++11
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -g")
@@ -29,6 +32,7 @@ find_package(ZLIB REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 include_directories(${SDL2_IMAGE_INCLUDE_DIR})
 include_directories(${OPENGL_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${CURL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(src)
@@ -36,8 +40,9 @@ include_directories(src)
 # All source files from the current directory will be used
 aux_source_directory(src SRC_LIST)
 add_executable(${PROJECT_NAME} ${SRC_LIST})
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     ${Boost_LIBRARIES} boost_filesystem boost_system boost_thread
     ${SDL2_IMAGE_LIBRARY} SDL2main SDL2
     ${JPEG_LIBRARY} ${PNG_LIBRARY}
-    ${OPENGL_gl_LIBRARY} ${CURL_LIBRARY} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARY} dl)
+    ${GLEW_LIBRARY}
+    ${CURL_LIBRARY} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARY} dl)

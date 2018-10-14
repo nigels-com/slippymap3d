@@ -4,6 +4,7 @@ sdl2_image/2.0.3@bincrafters/stable
 libpng/1.6.34@bincrafters/stable
 zlib/1.2.11@conan/stable
 libjpeg/9c@bincrafters/stable
+cmake_findboost_modular/1.65.1@bincrafters/stable
 boost_filesystem/1.65.1@bincrafters/stable
 boost_system/1.65.1@bincrafters/stable
 boost_thread/1.65.1@bincrafters/stable
