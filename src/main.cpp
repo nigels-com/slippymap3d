@@ -335,7 +335,7 @@ void render(double zoom, uint64_t x, uint64_t y)
 int main()
 {
     // Initialize CURL
-    if (curl_global_init(CURL_GLOBAL_DEFAULT) != 0)
+    if (curl_global_init(CURL_GLOBAL_ALL) != 0)
     {
         std::cerr << "Could not initialize libcurl. " << std::endl;
         return 1;
