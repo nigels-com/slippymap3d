@@ -28,4 +28,5 @@ libjpeg:shared=False
 boost_filesystem:shared=False
 boost_system:shared=False
 boost_thread:shared=False
+libcurl:shared=True
 ilmbase:shared=False

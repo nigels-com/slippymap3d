@@ -269,6 +269,9 @@ int main()
         return 1;
     }
 
+    // Swap on vsync
+    SDL_GL_SetSwapInterval(1);
+
     // Create an OpenGL window
     window = SDL_CreateWindow("slippymap3d", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1024, 768, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window) {

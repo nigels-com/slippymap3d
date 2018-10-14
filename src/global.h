@@ -28,7 +28,7 @@
 
 #include <SDL2/SDL.h>
 
-#include <OpenEXR/ImathVec.h>
+#include <ImathVec.h>
 
 /**
  * @brief holds the state of the window's width and height

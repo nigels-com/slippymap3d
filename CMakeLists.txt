@@ -18,7 +18,7 @@ find_package(Boost COMPONENTS REQUIRED filesystem system asio thread)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(ILMBASE REQUIRED)
+find_package(IlmBase REQUIRED)
 
 #message(STATUS "Boost libraries: " ${Boost_LIBRARIES})
 
@@ -36,7 +36,7 @@ include_directories(${OPENGL_INCLUDE_DIR})
 include_directories(${GLEW_INCLUDE_DIR})
 include_directories(${CURL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${ILMBASE_INCLUDE_DIR})
+include_directories(${ILMBASE_INCLUDE_DIRS})
 include_directories(src)
 
 # All source files from the current directory will be used
